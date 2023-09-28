@@ -21,11 +21,12 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 app.get('/food-api/findListingByName', async (req, res) => {
+	console.log(req);
 	const nameOfListing = req.query.name;
-	const result = await findOneListingByName(nameOfListing);
+	const results = await findOneListingByName(nameOfListing);
 
-	if (result) {
-		res.json(result);
+	if (results.length > 0) {
+		res.json(results);
 	} else {
 		res.status(404).json({
 			message: `No listings found with the name '${nameOfListing}'`,
@@ -39,12 +40,13 @@ async function findOneListingByName(nameOfListing) {
 		const result = await client
 			.db('food')
 			.collection('food data')
-			.findOne({ product_name: nameOfListing });
-
+			.find({ product_name_pl: { $regex: nameOfListing, $options: 'i' } })
+			.limit(20) //limit of items in response
+			.toArray();
 		return result;
 	} catch (error) {
 		console.error('Error finding listing:', error);
-		return null;
+		return;
 	} finally {
 		client.close();
 	}

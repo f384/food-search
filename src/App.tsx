@@ -1,19 +1,19 @@
 import './App.css';
 import { useState } from 'react';
+
 type TFoodData = {
-	product_name: string;
-	'energy-kcal_100g': number;
+	product_name_pl: string | null;
+	'energy-kcal_value': number | null;
 };
+
 function App() {
 	const [inputValue, setInputValue] = useState('');
-	const [productInfo, setProductInfo] = useState<TFoodData>({
-		product_name: '',
-		'energy-kcal_100g': 0,
-	});
-	const [isResponse, setIsResponse] = useState<boolean>(false);
+	const [productInfo, setProductInfo] = useState<TFoodData[]>([]);
+	const [isLoading, setIsLoading] = useState<boolean>(false);
 
 	const handleSearch = async () => {
 		try {
+			setIsLoading(true);
 			const response = await fetch(
 				`http://localhost:3000/food-api/findListingByName?name=${inputValue}`
 			);
@@ -21,17 +21,19 @@ function App() {
 			if (response.ok) {
 				const data = await response.json();
 				setProductInfo(data);
-				setIsResponse(true);
-				console.log(productInfo);
 			} else {
-				console.error('Error fetching data here:', response.statusText);
-				setProductInfo({
-					product_name: 'cannot find product',
-					'energy-kcal_100g': 0,
-				});
+				console.error('Error fetching data:', response.statusText);
+				setProductInfo([
+					{
+						product_name_pl: 'Cannot find product',
+						'energy-kcal_value': null,
+					},
+				]);
 			}
 		} catch (error) {
-			console.error('Error fetching data here 2:', error);
+			console.error('Error fetching data:', error);
+		} finally {
+			setIsLoading(false);
 		}
 	};
 
@@ -48,12 +50,17 @@ function App() {
 				</label>
 				<button onClick={handleSearch}>Search</button>
 			</div>
-			{isResponse && (
+			{isLoading && <div>Loading...</div>}
+			{!isLoading && productInfo.length > 0 && (
 				<div>
-					<h2>Product Name:</h2>
-					<p>{productInfo.product_name}</p>
-					<h2>Product Calories:</h2>
-					<p>{productInfo['energy-kcal_100g']}</p>
+					{productInfo.map((el, index) => (
+						<div key={index}>
+							<h1>Product Name</h1>
+							<p>{el.product_name_pl}</p>
+							<h1>Product Calories per 100g</h1>
+							<p>{el['energy-kcal_value']} kcal</p>
+						</div>
+					))}
 				</div>
 			)}
 		</div>
